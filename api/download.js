@@ -22,10 +22,10 @@ export default async function handler(req, res) {
 
         const videoId = videoIdMatch[1];
 
-        // දැන් ඉතාම සාර්ථකව සහ ස්ථාවරව වැඩ කරන වෙනත් නිදහස් ඩවුන්ලෝඩ් සේවාවකට (SaveTheVideo හෝ Y2mate වැනි ක්‍රමයක්) යොමු කිරීම
+        // ඔබ ඉල්ලූ vidssave.com සේවාව හරහා සෘජුවම ඩවුන්ලෝඩ් පේජ් එකට යොමු කිරීම
         return res.status(200).json({
             success: true,
-            download_url: `https://www.y2mate.is/youtube/${videoId}`
+            download_url: `https://vidssave.com/watch?v=${videoId}`
         });
 
     } catch (err) {
