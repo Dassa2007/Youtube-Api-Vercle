@@ -14,18 +14,13 @@ export default async function handler(req, res) {
     }
 
     try {
-        const videoIdMatch = videoUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+        // vidssave.com සයිට් එකේ සර්ච් පරාමිතිය (query parameter) හරියටම වැඩ කරන විදිහට ලින්ක් එක සැකසීම
+        // උදාහරණයක් ලෙස: https://vidssave.com/?url=... හෝ vidssave ලින්ක් ස්ට්‍රක්චර් එකට ගැලපෙන ලෙස
+        const encodedUrl = encodeURIComponent(videoUrl);
         
-        if (!videoIdMatch || !videoIdMatch[1]) {
-            return res.status(400).json({ success: false, error: "Invalid YouTube URL!" });
-        }
-
-        const videoId = videoIdMatch[1];
-
-        // ඔබ ඉල්ලූ vidssave.com සේවාව හරහා සෘජුවම ඩවුන්ලෝඩ් පේජ් එකට යොමු කිරීම
         return res.status(200).json({
             success: true,
-            download_url: `https://vidssave.com/watch?v=${videoId}`
+            download_url: `https://vidssave.com/?url=${encodedUrl}`
         });
 
     } catch (err) {
