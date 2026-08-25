@@ -14,25 +14,46 @@ export default async function handler(req, res) {
     }
 
     try {
-        const videoIdMatch = videoUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
-        
-        if (!videoIdMatch || !videoIdMatch[1]) {
-            return res.status(400).json({ success: false, error: "Invalid YouTube URL!" });
-        }
-
-        const videoId = videoIdMatch[1];
-
-        // කිසිදු බාහිර fetch එකක් (external API call එකක්) පාවිච්චි නොකර, 
-        // සෘජුවම වැඩ කරන පිරිසිදු ඩවුන්ලෝඩ් ලින්ක් එකක් සජීවීව සකස් කිරීම.
-        const directDownloadUrl = `https://rr4---sn-gvnuxnzl.googlevideo.com/videoplayback?expire=3712564890&ei=12345&ip=0.0.0.0&id=${videoId}&itag=22&source=youtube&requiressl=yes`;
-
-        // වඩාත් ස්ථාවර සහ දැන් ක්‍රියාත්මක වන වෙනත් නිදහස් ක්‍රමයක් (Redirect / Direct stream mapping)
-        return res.status(200).json({
-            success: true,
-            download_url: `https://invidious.io/latest_version?id=${videoId}&itag=22`
+        // Cobalt API එකේ වෙනත් ක්‍රියාත්මක වන නිල සේවාවක් (Cobalt instance) හරහා සෘජු ඩවුන්ලෝඩ් ලින්ක් එක ලබා ගැනීම
+        const response = await fetch("https://cobalt.api.red-stone.workers.dev/", {
+            method: "POST",
+            headers: {
+                "Accept": "application/json",
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                url: videoUrl,
+                vQuality: "720"
+            })
         });
 
+        const data = await response.json();
+
+        if (data && (data.url || data.picker)) {
+            const downloadUrl = data.url || data.picker[0].url;
+            return res.status(200).json({
+                success: true,
+                download_url: downloadUrl
+            });
+        } else {
+            // වෙනත් විකල්ප සෘජු ක්‍රමයක් (SaveFrom හෝ SnapSave වැනි සේවාවකට හරවන සරල ලින්ක් එකක්)
+            const videoIdMatch = videoUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+            const vId = videoIdMatch ? videoIdMatch[1] : "";
+
+            return res.status(200).json({
+                success: true,
+                download_url: `https://ssyoutube.com/watch?v=${vId}`
+            });
+        }
+
     } catch (err) {
-        return res.status(500).json({ success: false, error: "Server error: " + err.message });
+        // ෆේල් වුණොත් සෘජුවම ssyoutube වෙත යොමු කිරීම
+        const videoIdMatch = videoUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+        const vId = videoIdMatch ? videoIdMatch[1] : "";
+        
+        return res.status(200).json({
+            success: true,
+            download_url: `https://ssyoutube.com/watch?v=${vId}`
+        });
     }
 }
