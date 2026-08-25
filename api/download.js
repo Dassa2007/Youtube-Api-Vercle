@@ -14,33 +14,23 @@ export default async function handler(req, res) {
     }
 
     try {
-        const apiRes = await fetch('https://co.wuk.sh/api/json', {
-            method: 'POST',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
-            },
-            body: JSON.stringify({
-                url: videoUrl,
-                vQuality: '720',
-                filenamePattern: 'classic'
-            })
-        });
-
+        // වෙනත් නිදහස් Public API එකක් භාවිත කිරීම
+        const apiRes = await fetch(`https://pipedapi.kavin.rocks/streams/${encodeURIComponent(videoUrl.split('v=')[1]?.split('&')[0])}`);
         const data = await apiRes.json();
 
-        if (data && (data.url || data.picker)) {
-            const downloadUrl = data.url || data.picker[0].url;
+        if (data && data.videoStreams && data.videoStreams.length > 0) {
+            // හොඳම ඩවුන්ලෝඩ් ලින්ක් එක තෝරා ගැනීම
+            const stream = data.videoStreams.find(s => s.quality === '720p' && s.format === 'mp4') || data.videoStreams[0];
+            
             return res.status(200).json({
                 success: true,
-                download_url: downloadUrl
+                download_url: stream.url
             });
         } else {
-            return res.status(400).json({ success: false, error: "Could not fetch video. Try another link!" });
+            return res.status(400).json({ success: false, error: "Could not fetch video streams. Try another link!" });
         }
 
     } catch (err) {
-        return res.status(500).json({ success: false, error: err.message });
+        return res.status(500).json({ success: false, error: "Server connection failed. Try again later." });
     }
 }
