@@ -22,10 +22,10 @@ export default async function handler(req, res) {
 
         const videoId = videoIdMatch[1];
 
-        // දැන් සාර්ථකව වැඩ කරන සහ ලින්ක් එක ස්වයංක්‍රීයව පාස් කරන හොඳම ක්‍රමය
+        // දැන් ඉතාම සාර්ථකව සහ ස්ථාවරව වැඩ කරන වෙනත් නිදහස් ඩවුන්ලෝඩ් සේවාවකට (SaveTheVideo හෝ Y2mate වැනි ක්‍රමයක්) යොමු කිරීම
         return res.status(200).json({
             success: true,
-            download_url: `https://youtubepp.com/watch?v=${videoId}`
+            download_url: `https://www.y2mate.is/youtube/${videoId}`
         });
 
     } catch (err) {
