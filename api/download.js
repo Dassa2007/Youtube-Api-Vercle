@@ -14,31 +14,39 @@ export default async function handler(req, res) {
     }
 
     try {
-        // ඉතාම සාර්ථකව MP3 ලින්ක් ලබා දෙන වෙනත් නිදහස් API එකක් භාවිතය
-        const apiRes = await fetch(`https://api.vkrnetserver.com/api/v1/convert?url=${encodeURIComponent(videoUrl)}`);
-        const data = await apiRes.json();
+        // Cobalt API එක හරහා සෘජු ඩවුන්ලෝඩ් ලින්ක් එක ලබා ගැනීම
+        const response = await fetch("https://api.cobalt.tools/api/json", {
+            method: "POST",
+            headers: {
+                "Accept": "application/json",
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                url: videoUrl,
+                downloadMode: "audio", // MP3 හෝ ඕඩියෝ සඳහා
+                audioFormat: "mp3",
+                filenameStyle: "pretty"
+            })
+        });
 
-        if (data && (data.status === "success" || data.url)) {
-            return res.status(200).json({
-                success: true,
-                download_url: data.url || data.dl_url
-            });
-        } else {
-            // වෙනත් විකල්ප API එකකට මාරුවීම
-            const altRes = await fetch(`https://p.oceansaver.in/ajax/download.php?copyright=0&url=${encodeURIComponent(videoUrl)}&format=mp3`);
-            const altData = await altRes.json();
+        const data = await response.json();
 
-            if (altData && altData.success) {
-                return res.status(200).json({
-                    success: true,
-                    download_url: altData.id ? `https://p.oceansaver.in/download.php?id=${altData.id}` : altData.link
-                });
+        if (data && (data.url || data.picker)) {
+            let downloadLink = data.url;
+            
+            if (!downloadLink && data.picker && data.picker.length > 0) {
+                downloadLink = data.picker[0].url;
             }
 
-            return res.status(500).json({ success: false, error: "සින්දුව ලබා ගැනීමට නොහැකි විය. කරුණාකර වෙනත් ලින්ක් එකක් උත්සාහ කරන්න." });
+            return res.status(200).json({
+                success: true,
+                download_url: downloadLink
+            });
+        } else {
+            return res.status(500).json({ success: false, error: "ඩවුන්ලෝඩ් ලින්ක් එක ලබා ගැනීමට නොහැකි විය." });
         }
 
     } catch (err) {
-        return res.status(500).json({ success: false, error: "සර්වර් දෝෂයක් සිදු විය: " + err.message });
+        return res.status(500).json({ success: false, error: "සර්වර් දෝෂයක් සිදු විය." });
     }
 }
