@@ -14,47 +14,47 @@ export default async function handler(req, res) {
     }
 
     try {
-        // ඉතාම ස්ථාවර සහ සෘජු නිදහස් API එකක් භාවිත කිරීම
-        const response = await fetch(`https://pipedapi.kavin.rocks/search?q=${encodeURIComponent(videoUrl)}`);
-        const searchData = await response.json();
+        // Cobalt API එක භාවිත කර සෘජු ඩවුන්ලෝඩ් ලින්ක් එක ලබා ගැනීම
+        const response = await fetch("https://co.wuk.sh/api/json", {
+            method: "POST",
+            headers: {
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "User-Agent": "Mozilla/5.0"
+            },
+            body: JSON.stringify({
+                url: videoUrl,
+                vQuality: "720"
+            })
+        });
 
-        let streamUrl = "";
-        
-        if (searchData && searchData.items && searchData.items.length > 0) {
-            const videoId = searchData.items[0].url.split('v=')[1];
-            const streamRes = await fetch(`https://pipedapi.kavin.rocks/streams/${videoId}`);
-            const streamData = await streamRes.json();
-            
-            if (streamData && streamData.videoStreams) {
-                const mp4Stream = streamData.videoStreams.find(s => s.quality === '720p' && s.format === 'mp4') || streamData.videoStreams[0];
-                streamUrl = mp4Stream.url;
-            }
-        }
+        const data = await response.json();
 
-        if (streamUrl) {
+        if (data && (data.url || data.picker)) {
+            const downloadUrl = data.url || data.picker[0].url;
             return res.status(200).json({
                 success: true,
-                download_url: streamUrl
+                download_url: downloadUrl
             });
         } else {
-            // වෙනත් විකල්ප ක්‍රමයක් (Redirect URL)
-            return res.status(200).json({
-                success: true,
-                download_url: `https://rr4---sn-gvnuxnzl.googlevideo.com/videoplayback?${videoUrl}` // fallback
-            });
+            // වෙනත් විකල්ප API එකක් (Invidious instance) මඟින් ලබා ගැනීම
+            const invId = videoUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+            if (invId && invId[1]) {
+                const pipedRes = await fetch(`https://pipedapi.kavin.rocks/streams/${invId[1]}`);
+                const pipedData = await pipedRes.json();
+                
+                if (pipedData && pipedData.videoStreams) {
+                    const stream = pipedData.videoStreams.find(s => s.quality === '720p' && s.format === 'mp4') || pipedData.videoStreams[0];
+                    if (stream && stream.url) {
+                        return res.status(200).json({ success: true, download_url: stream.url });
+                    }
+                }
+            }
+
+            return res.status(400).json({ success: false, error: "Could not fetch download link. Try another video!" });
         }
 
     } catch (err) {
-        // කිසිදු බාහිර API එකක් නැතුව සෘජුව ලින්ක් එක ජෙනරේට් කරන ක්‍රමයක්
-        const videoIdMatch = videoUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
-        if (videoIdMatch && videoIdMatch[1]) {
-            const vId = videoIdMatch[1];
-            return res.status(200).json({
-                success: true,
-                download_url: `https://www.y2mate.com/youtube/${vId}`
-            });
-        }
-
-        return res.status(500).json({ success: false, error: "Could not process video link." });
+        return res.status(500).json({ success: false, error: "Server error: " + err.message });
     }
 }
