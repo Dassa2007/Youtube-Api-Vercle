@@ -14,12 +14,12 @@ export default async function handler(req, res) {
     }
 
     try {
-        const response = await fetch('https://co.wuk.sh/api/json', {
+        const apiRes = await fetch('https://co.wuk.sh/api/json', {
             method: 'POST',
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
-                'User-Agent': 'Mozilla/5.0'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
             },
             body: JSON.stringify({
                 url: videoUrl,
@@ -28,7 +28,7 @@ export default async function handler(req, res) {
             })
         });
 
-        const data = await response.json();
+        const data = await apiRes.json();
 
         if (data && (data.url || data.picker)) {
             const downloadUrl = data.url || data.picker[0].url;
@@ -41,7 +41,6 @@ export default async function handler(req, res) {
         }
 
     } catch (err) {
-        console.error(err);
-        return res.status(500).json({ success: false, error: "Server error occurred. Please try again." });
+        return res.status(500).json({ success: false, error: err.message });
     }
 }
