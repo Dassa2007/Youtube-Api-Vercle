@@ -14,20 +14,37 @@ export default async function handler(req, res) {
     }
 
     try {
-        const videoIdMatch = videoUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
-        
-        if (!videoIdMatch || !videoIdMatch[1]) {
-            return res.status(400).json({ success: false, error: "Invalid YouTube URL!" });
-        }
-
-        const videoId = videoIdMatch[1];
-
-        // දැන් අපි cobalt හෝ ඉතාම ස්ථාවර API එකක් හරහා කෙලින්ම ඩවුන්ලෝඩ් ලින්ක් එක ලබා දෙමු
-        // මෙහිදී අපි ඉතාම සාර්ථකව වැඩ කරන Y2mate / SaveFrom වැනි සේවාවක ඩිරෙක්ට් ලින්ක් ස්ට්‍රක්චර් එකක් පාවිච්චි කරමු.
-        return res.status(200).json({
-            success: true,
-            download_url: `https://rr6---sn-n8v7znek.googlevideo.com/videoplayback?expire=1710000000&sparams=ip,id,itag,source,ratebypass,requiressl&id=${videoId}`
+        // Cobalt API එකට ඉල්ලීම යැවීම (මෙයින් කිසිදු එරර් එකක් නොමැතිව සෘජු ඩවුන්ලෝඩ් ලින්ක් එකක් ලබා දේ)
+        const response = await fetch("https://api.cobalt.tools/api/json", {
+            method: "POST",
+            headers: {
+                "Accept": "application/json",
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                url: videoUrl,
+                vQuality: "720",
+                filenameStyle: "pretty"
+            })
         });
+
+        const data = await response.json();
+
+        if (data && (data.url || data.picker)) {
+            let downloadLink = data.url;
+            
+            // සමහර විට විකල්ප ලින්ක් එකක් එන්න පුළුවන් (picker වලින්)
+            if (!downloadLink && data.picker && data.picker.length > 0) {
+                downloadLink = data.picker[0].url;
+            }
+
+            return res.status(200).json({
+                success: true,
+                download_url: downloadLink
+            });
+        } else {
+            return res.status(500).json({ success: false, error: "Could not fetch video. Try another link." });
+        }
 
     } catch (err) {
         return res.status(500).json({ success: false, error: "Server error: " + err.message });
