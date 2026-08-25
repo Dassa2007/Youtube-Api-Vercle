@@ -10,11 +10,11 @@ export default async function handler(req, res) {
     const videoUrl = req.query.url;
     
     if (!videoUrl) {
-        return res.status(400).json({ success: false, error: "Please provide a YouTube URL!" });
+        return res.status(400).json({ success: false, error: "කරුණාකර YouTube ලින්ක් එකක් ඇතුළත් කරන්න!" });
     }
 
     try {
-        // Cobalt API එකට ඉල්ලීම යැවීම (මෙයින් කිසිදු එරර් එකක් නොමැතිව සෘජු ඩවුන්ලෝඩ් ලින්ක් එකක් ලබා දේ)
+        // Cobalt API එක හරහා කෙලින්ම MP3 (Audio) පමණක් ඉල්ලීම
         const response = await fetch("https://api.cobalt.tools/api/json", {
             method: "POST",
             headers: {
@@ -23,7 +23,8 @@ export default async function handler(req, res) {
             },
             body: JSON.stringify({
                 url: videoUrl,
-                vQuality: "720",
+                downloadMode: "audio", // මෙතැනදී ඕඩියෝ පමණක් ලබා ගැනීමට නියම කරයි
+                audioFormat: "mp3",    // MP3 ෆෝමැට් එක
                 filenameStyle: "pretty"
             })
         });
@@ -33,7 +34,6 @@ export default async function handler(req, res) {
         if (data && (data.url || data.picker)) {
             let downloadLink = data.url;
             
-            // සමහර විට විකල්ප ලින්ක් එකක් එන්න පුළුවන් (picker වලින්)
             if (!downloadLink && data.picker && data.picker.length > 0) {
                 downloadLink = data.picker[0].url;
             }
@@ -43,10 +43,10 @@ export default async function handler(req, res) {
                 download_url: downloadLink
             });
         } else {
-            return res.status(500).json({ success: false, error: "Could not fetch video. Try another link." });
+            return res.status(500).json({ success: false, error: "සින්දුව ලබා ගැනීමට නොහැකි විය. වෙනත් ලින්ක් එකක් උත්සාහ කරන්න." });
         }
 
     } catch (err) {
-        return res.status(500).json({ success: false, error: "Server error: " + err.message });
+        return res.status(500).json({ success: false, error: "සර්වර් දෝෂයක් සිදු විය: " + err.message });
     }
 }
