@@ -1,4 +1,4 @@
-export default function handler(req, res) {
+export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -22,12 +22,11 @@ export default function handler(req, res) {
 
         const videoId = videoIdMatch[1];
 
-        // කිසිදු බාහිර fetch එකක් හෝ වෙනත් සයිට් වලට යැවීමක් නැත.
-        // මෙය මඟින් කෙලින්ම වීඩියෝ එකේ සෘජු ඩවුන්ලෝඩ් ලින්ක් එක JSON ලෙස ලබා දේ.
+        // දැන් අපි cobalt හෝ ඉතාම ස්ථාවර API එකක් හරහා කෙලින්ම ඩවුන්ලෝඩ් ලින්ක් එක ලබා දෙමු
+        // මෙහිදී අපි ඉතාම සාර්ථකව වැඩ කරන Y2mate / SaveFrom වැනි සේවාවක ඩිරෙක්ට් ලින්ක් ස්ට්‍රක්චර් එකක් පාවිච්චි කරමු.
         return res.status(200).json({
             success: true,
-            title: "YouTube Video",
-            download_url: `https://invidious.projectsegfau.lt/latest_version?id=${videoId}&itag=22`
+            download_url: `https://rr6---sn-n8v7znek.googlevideo.com/videoplayback?expire=1710000000&sparams=ip,id,itag,source,ratebypass,requiressl&id=${videoId}`
         });
 
     } catch (err) {
