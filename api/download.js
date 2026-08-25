@@ -14,44 +14,19 @@ export default async function handler(req, res) {
     }
 
     try {
-        // Cobalt API එක භාවිත කර සෘජු ඩවුන්ලෝඩ් ලින්ක් එක ලබා ගැනීම
-        const response = await fetch("https://co.wuk.sh/api/json", {
-            method: "POST",
-            headers: {
-                "Accept": "application/json",
-                "Content-Type": "application/json",
-                "User-Agent": "Mozilla/5.0"
-            },
-            body: JSON.stringify({
-                url: videoUrl,
-                vQuality: "720"
-            })
-        });
-
-        const data = await response.json();
-
-        if (data && (data.url || data.picker)) {
-            const downloadUrl = data.url || data.picker[0].url;
+        // වීඩියෝ ID එක ලබා ගැනීම
+        const videoIdMatch = videoUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+        
+        if (videoIdMatch && videoIdMatch[1]) {
+            const vId = videoIdMatch[1];
+            
+            // කිසිදු බාහිර fetch එකක් නැතුව සෘජුවම වැඩ කරන ක්‍රමයක් (SaveFrom / Y2Mate හෝ Cobalt වෙත redirect ලින්ක් එක)
             return res.status(200).json({
                 success: true,
-                download_url: downloadUrl
+                download_url: `https://en.loader.to/api/button/?url=https://www.youtube.com/watch?v=${vId}`
             });
         } else {
-            // වෙනත් විකල්ප API එකක් (Invidious instance) මඟින් ලබා ගැනීම
-            const invId = videoUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
-            if (invId && invId[1]) {
-                const pipedRes = await fetch(`https://pipedapi.kavin.rocks/streams/${invId[1]}`);
-                const pipedData = await pipedRes.json();
-                
-                if (pipedData && pipedData.videoStreams) {
-                    const stream = pipedData.videoStreams.find(s => s.quality === '720p' && s.format === 'mp4') || pipedData.videoStreams[0];
-                    if (stream && stream.url) {
-                        return res.status(200).json({ success: true, download_url: stream.url });
-                    }
-                }
-            }
-
-            return res.status(400).json({ success: false, error: "Could not fetch download link. Try another video!" });
+            return res.status(400).json({ success: false, error: "Invalid YouTube URL!" });
         }
 
     } catch (err) {
